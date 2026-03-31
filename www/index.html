@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>TikTok Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #fe2c55, #ff6b6b);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #fe2c55;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #fe2c55;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #ff6b6b;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .video-container {
+            background: #f5f5f5;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            max-height: 500px;
+            background: black;
+        }
+
+        .info {
+            padding: 15px;
+        }
+
+        .title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .author {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+            background: #fe2c55;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #c33;
+        }
+
+        .example {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .example a {
+            color: #fe2c55;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 TikTok Downloader</h1>
+        <div class="subtitle">Download video TikTok tanpa watermark</div>
+        
+        <input type="text" id="urlInput" placeholder="Masukkan URL TikTok...">
+        <button id="downloadBtn">📥 Download Video</button>
+        
+        <div class="example">
+            Contoh: <a onclick="setExample()">https://vt.tiktok.com/ZSraDGN8m/</a>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div>⏳ Memproses...</div>
+        </div>
+        
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const api = {
+            xterm: {
+                url: "https://api.termai.cc/api/downloader/tiktok",
+                key: "TermAI-bn6V8hd0J1o0B3Y9"
+            }
+        };
+
+        async function tiktok(q) {
+            let res = await fetch(`${api.xterm.url}?url=${q}&key=${api.xterm.key}`)
+                .then(response => response.json());
+            return res;
+        }
+
+        function setExample() {
+            document.getElementById('urlInput').value = 'https://vt.tiktok.com/ZSraDGN8m/';
+        }
+
+        function formatNumber(num) {
+            if (!num) return '0';
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        async function prosesDownload() {
+            const url = document.getElementById('urlInput').value.trim();
+            
+            if (!url) {
+                alert('Masukkan URL TikTok!');
+                return;
+            }
+            
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('downloadBtn');
+            
+            loading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            btn.disabled = true;
+            
+            try {
+                const data = await tiktok(url);
+                console.log('Response:', data);
+                
+                // Cek status
+                if (!data.status || !data.data) {
+                    resultDiv.innerHTML = `<div class="error">❌ Gagal mengambil video. Coba URL lain.</div>`;
+                    resultDiv.style.display = 'block';
+                    return;
+                }
+                
+                const videoData = data.data;
+                
+                // Ambil URL video dari media (prioritas HD)
+                let videoUrl = '';
+                if (videoData.media && videoData.media.length > 0) {
+                    // Ambil yang HD dulu (index 1) atau yang biasa (index 0)
+                    if (videoData.media[1] && videoData.media[1].url) {
+                        videoUrl = videoData.media[1].url;
+                    } else if (videoData.media[0] && videoData.media[0].url) {
+                        videoUrl = videoData.media[0].url;
+                    }
+                }
+                
+                if (!videoUrl) {
+                    resultDiv.innerHTML = `<div class="error">❌ Tidak ditemukan link video. Coba URL lain.</div>`;
+                    resultDiv.style.display = 'block';
+                    return;
+                }
+                
+                // Ambil data lainnya
+                const title = videoData.title || 'TikTok Video';
+                const author = videoData.author?.nickname || videoData.author?.unique_id || 'TikToker';
+                const likes = videoData.stats?.diggCount || 0;
+                const comments = videoData.stats?.commentCount || 0;
+                const shares = videoData.stats?.shareCount || 0;
+                const views = videoData.stats?.playCount || 0;
+                const thumbnail = videoData.thumbnail || '';
+                
+                // Tampilkan hasil
+                resultDiv.innerHTML = `
+                    <div class="video-container">
+                        <video controls poster="${thumbnail}">
+                            <source src="${videoUrl}" type="video/mp4">
+                            Browser tidak support video
+                        </video>
+                        <div class="info">
+                            <div class="title">${escapeHtml(title)}</div>
+                            <div class="author">👤 @${escapeHtml(author)}</div>
+                            <div class="stats">
+                                <span>❤️ ${formatNumber(likes)}</span>
+                                <span>💬 ${formatNumber(comments)}</span>
+                                <span>🔄 ${formatNumber(shares)}</span>
+                                <span>👁️ ${formatNumber(views)}</span>
+                            </div>
+                            <a href="${videoUrl}" class="download-btn" download>💾 Download Video</a>
+                        </div>
+                    </div>
+                `;
+                resultDiv.style.display = 'block';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                resultDiv.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        document.getElementById('downloadBtn').addEventListener('click', prosesDownload);
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') prosesDownload();
+        });
+    </script>
+</body>
+</html>
